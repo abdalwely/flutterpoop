@@ -175,6 +175,11 @@ class UserModel extends Equatable {
     return UserModel.fromJson(data);
   }
 
+  String get profilePicture => profileImageUrl;
+
+  // Getter للحفاظ على التوافق مع المرجع القديم "id" بدلاً من "uid"
+  String get id => uid;
+
   bool get hasProfileImage => profileImageUrl.isNotEmpty;
   bool get hasBio => bio.isNotEmpty;
   bool get hasWebsite => website != null && website!.isNotEmpty;

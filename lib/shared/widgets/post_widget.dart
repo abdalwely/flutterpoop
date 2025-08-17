@@ -1,52 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../models/post_model.dart';
+import 'enhanced_interaction_widget.dart';
 
-class PostWidget extends StatefulWidget {
-  final String profileImageUrl;
-  final String username;
-  final String? location;
-  final String timeAgo;
-  final String imageUrl;
-  final String? caption;
-  final int likesCount;
-  final int commentsCount;
-  final bool isLiked;
-  final bool isSaved;
-  final VoidCallback? onLike;
-  final VoidCallback? onComment;
-  final VoidCallback? onShare;
-  final VoidCallback? onSave;
+class PostWidget extends ConsumerStatefulWidget {
+  final PostModel post;
   final VoidCallback? onProfileTap;
   final VoidCallback? onMoreTap;
+  final bool showFullCaption;
 
   const PostWidget({
     super.key,
-    required this.profileImageUrl,
-    required this.username,
-    this.location,
-    required this.timeAgo,
-    required this.imageUrl,
-    this.caption,
-    required this.likesCount,
-    required this.commentsCount,
-    this.isLiked = false,
-    this.isSaved = false,
-    this.onLike,
-    this.onComment,
-    this.onShare,
-    this.onSave,
+    required this.post,
     this.onProfileTap,
     this.onMoreTap,
+    this.showFullCaption = false,
   });
 
   @override
-  State<PostWidget> createState() => _PostWidgetState();
+  ConsumerState<PostWidget> createState() => _PostWidgetState();
 }
 
-class _PostWidgetState extends State<PostWidget>
+class _PostWidgetState extends ConsumerState<PostWidget>
     with TickerProviderStateMixin {
   late AnimationController _likeAnimationController;
   late Animation<double> _likeAnimation;

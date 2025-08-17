@@ -48,7 +48,7 @@ dependencies:
   # Authentication
   google_sign_in:
   flutter_facebook_auth:
-
+  share_plus:
   # Image & Media
   image_picker:
   cached_network_image:
