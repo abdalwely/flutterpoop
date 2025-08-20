@@ -1,0 +1,125 @@
+import 'package:flutter/material.dart';
+
+class CustomIcons {
+  CustomIcons._();
+
+  // Icons that are missing from Flutter's default Icons class
+  static const IconData mention = Icons.alternate_email;
+  static const IconData addText = Icons.text_fields;
+  static const IconData shoppingMall = Icons.store_mall_directory;
+  static const IconData telegram = Icons.send;
+
+  // Additional custom icons for better UI
+  static const IconData story = Icons.circle;
+  static const IconData reel = Icons.play_circle_filled;
+  static const IconData live = Icons.videocam;
+  static const IconData closeFriends = Icons.star;
+  static const IconData verified = Icons.verified;
+  static const IconData explore = Icons.explore;
+  static const IconData activity = Icons.favorite_border;
+  static const IconData direct = Icons.send_outlined;
+  static const IconData bookmark = Icons.bookmark_border;
+  static const IconData bookmarkFilled = Icons.bookmark;
+  static const IconData like = Icons.favorite_border;
+  static const IconData likeFilled = Icons.favorite;
+  static const IconData comment = Icons.chat_bubble_outline;
+  static const IconData share = Icons.send_outlined;
+  static const IconData more = Icons.more_horiz;
+  static const IconData close = Icons.close;
+  static const IconData back = Icons.arrow_back;
+  static const IconData forward = Icons.arrow_forward;
+  static const IconData menu = Icons.menu;
+  static const IconData search = Icons.search;
+  static const IconData camera = Icons.camera_alt;
+  static const IconData gallery = Icons.photo_library;
+  static const IconData video = Icons.videocam;
+  static const IconData flashOn = Icons.flash_on;
+  static const IconData flashOff = Icons.flash_off;
+  static const IconData flashAuto = Icons.flash_auto;
+  static const IconData flipCamera = Icons.flip_camera_android;
+  static const IconData timer = Icons.timer;
+  static const IconData effects = Icons.auto_fix_high;
+  static const IconData music = Icons.music_note;
+  static const IconData speed = Icons.speed;
+  static const IconData text = Icons.text_fields;
+  static const IconData draw = Icons.brush;
+  static const IconData sticker = Icons.emoji_emotions;
+  static const IconData location = Icons.location_on;
+  static const IconData tagPeople = Icons.person_add;
+  static const IconData crop = Icons.crop;
+  static const IconData rotate = Icons.rotate_right;
+  static const IconData brightness = Icons.brightness_6;
+  static const IconData contrast = Icons.contrast;
+  static const IconData saturation = Icons.palette;
+  static const IconData warmth = Icons.wb_sunny;
+  static const IconData highlights = Icons.highlight;
+  static const IconData shadows = Icons.brightness_3;
+  static const IconData vignette = Icons.lens;
+  static const IconData tiltShift = Icons.blur_circular;
+  static const IconData focus = Icons.center_focus_strong;
+  static const IconData fade = Icons.gradient;
+  static const IconData structure = Icons.texture;
+  static const IconData lux = Icons.wb_iridescent;
+  static const IconData drama = Icons.theater_comedy;
+  static const IconData vintage = Icons.camera;
+  static const IconData blackWhite = Icons.monochrome_photos;
+  static const IconData sepia = Icons.photo_filter;
+  static const IconData original = Icons.image;
+  static const IconData autoEnhance = Icons.auto_awesome;
+  static const IconData straighten = Icons.straighten;
+  static const IconData perspective = Icons.flip;
+  static const IconData vignetteBlur = Icons.blur_on;
+  static const IconData details = Icons.tune;
+  static const IconData pop = Icons.fiber_manual_record;
+  static const IconData hdr = Icons.hdr_on;
+  static const IconData glow = Icons.wb_cloudy;
+  static const IconData center = Icons.center_focus_weak;
+  static const IconData diamond = Icons.diamond;
+  static const IconData retro = Icons.camera_rear;
+  static const IconData urban = Icons.location_city;
+  static const IconData calm = Icons.waves;
+  static const IconData bright = Icons.wb_sunny_outlined;
+  static const IconData noir = Icons.filter_b_and_w;
+  static const IconData moon = Icons.nights_stay;
+  static const IconData clarendon = Icons.filter_1;
+  static const IconData gingham = Icons.filter_2;
+  static const IconData juno = Icons.filter_3;
+  static const IconData lark = Icons.filter_4;
+  static const IconData ludwig = Icons.filter_5;
+  static const IconData valencia = Icons.filter_6;
+  static const IconData xpro2 = Icons.filter_7;
+  static const IconData aden = Icons.filter_8;
+  static const IconData perpetua = Icons.filter_9;
+  static const IconData amaro = Icons.filter_none;
+  static const IconData mayfair = Icons.auto_awesome;
+  static const IconData rise = Icons.trending_up;
+  static const IconData hudson = Icons.landscape;
+  static const IconData sierra = Icons.terrain;
+  static const IconData willow = Icons.eco;
+  static const IconData lofi = Icons.music_off;
+  static const IconData earlybird = Icons.wb_twilight;
+  static const IconData brannan = Icons.local_fire_department;
+  static const IconData inkwell = Icons.opacity;
+  static const IconData hefe = Icons.local_cafe;
+  static const IconData nashville = Icons.music_video;
+  static const IconData sutro = Icons.panorama_horizontal;
+  static const IconData toaster = Icons.kitchen;
+  static const IconData walden = Icons.forest;
+  static const IconData nineteen77 = Icons.casino;
+  static const IconData kelvin = Icons.thermostat;
+  static const IconData normal = Icons.photo;
+  static const IconData helios = Icons.wb_sunny;
+  static const IconData maven = Icons.auto_fix_normal;
+  static const IconData ginza = Icons.nights_stay;
+  static const IconData skyline = Icons.apartment;
+  static const IconData dogpatch = Icons.pets;
+  static const IconData brooklyn = Icons.location_city;
+  static const IconData helena = Icons.woman;
+  static const IconData ashby = Icons.terrain;
+  static const IconData charmes = Icons.favorite;
+}
+
+// Extension to add convenience methods for MdiIcons that might be missing
+extension MdiIconsExtension on Icons {
+  static const IconData telegram = Icons.send;
+}
