@@ -1,0 +1,152 @@
+name: instagrem
+description: A new Flutter project.
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.5 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI & Material Design
+  cupertino_icons:
+  material_design_icons_flutter: ^7.0.7296
+
+  # State Management
+  provider:
+  riverpod:
+  flutter_riverpod:
+
+  # Firebase Backend
+  firebase_core:
+  firebase_auth:
+  cloud_firestore:
+  firebase_storage:
+  firebase_messaging:
+  firebase_analytics:
+
+  # Authentication
+  google_sign_in:
+  flutter_facebook_auth:
+  share_plus:
+  # Image & Media
+  image_picker:
+  cached_network_image:
+  photo_view:
+
+
+  chewie:
+  camera:
+
+  # Storage & Caching
+  shared_preferences:
+  hive:
+  hive_flutter:
+  path_provider:
+
+  # Network & HTTP
+  http:
+  dio:
+
+  # Navigation
+  go_router:
+  auto_route:
+
+  # UI Components & Animations
+  flutter_staggered_grid_view:
+  shimmer:
+  lottie:
+  animated_text_kit:
+  flutter_svg:
+  badges:
+
+  # Utils & Helpers
+  intl:
+  timeago:
+  uuid:
+  equatable:
+  json_annotation:
+
+  # Permissions
+  permission_handler:
+
+  # Location
+  geolocator:
+  geocoding:
+
+  # Real-time messaging
+  socket_io_client:
+
+  # Local notifications
+  flutter_local_notifications:
+
+  # File handling
+  file_picker:
+  path:
+
+  # Responsive design
+  flutter_screenutil:
+  responsive_builder:
+
+  # Arabic fonts and RTL support
+  arabic_font:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints:
+
+  # Code generation
+  build_runner:
+  json_serializable:
+  hive_generator:
+  auto_route_generator:
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  # Assets
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+    - assets/fonts/
+
+
+  # Arabic Fonts
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Regular.ttf
+        - asset: assets/fonts/Cairo-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo-Light.ttf
+          weight: 300
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Tajawal-Light.ttf
+          weight: 300
