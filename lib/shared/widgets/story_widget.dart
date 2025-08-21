@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../features/stories/presentation/pages/create_story_screen.dart';
 
 class StoryWidget extends StatelessWidget {
   final String profileImageUrl;
@@ -10,6 +11,7 @@ class StoryWidget extends StatelessWidget {
   final bool isViewed;
   final bool isMyStory;
   final VoidCallback? onTap;
+  final VoidCallback? onAddStory;
   final double size;
 
   const StoryWidget({
@@ -19,13 +21,14 @@ class StoryWidget extends StatelessWidget {
     this.isViewed = false,
     this.isMyStory = false,
     this.onTap,
+    this.onAddStory,
     this.size = 70,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isMyStory ? (onAddStory ?? () => _showCreateStoryOptions(context)) : onTap,
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -64,21 +67,24 @@ class StoryWidget extends StatelessWidget {
                   child: isMyStory
                       ? Align(
                           alignment: Alignment.bottomRight,
-                          child: Container(
-                            width: 20.w,
-                            height: 20.h,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.white,
-                                width: 2,
+                          child: GestureDetector(
+                            onTap: onAddStory ?? () => _showCreateStoryOptions(context),
+                            child: Container(
+                              width: 20.w,
+                              height: 20.h,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.white,
+                                  width: 2,
+                                ),
                               ),
-                            ),
-                            child: Icon(
-                              Icons.add,
-                              color: AppColors.white,
-                              size: 12.sp,
+                              child: Icon(
+                                Icons.add,
+                                color: AppColors.white,
+                                size: 12.sp,
+                              ),
                             ),
                           ),
                         )
@@ -107,6 +113,15 @@ class StoryWidget extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showCreateStoryOptions(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateStoryScreen(),
       ),
     );
   }

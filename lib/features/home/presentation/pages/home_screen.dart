@@ -9,8 +9,12 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/story_widget.dart';
 import '../../../../shared/widgets/post_widget.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
+import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/providers/posts_provider.dart';
 import '../../../messaging/presentation/pages/messages_screen.dart';
 import '../../../notifications/presentation/pages/notifications_screen.dart';
+import '../../../profile/presentation/pages/profile_screen.dart';
+import '../../../post/presentation/pages/comments_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -46,25 +50,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _loadInitialData() async {
-    setState(() => _isLoading = true);
-
-    // Simulate loading data
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() => _isLoading = false);
+    final auth = ref.read(authProvider);
+    if (auth.user != null) {
+      await ref.read(postsProvider.notifier).loadFeedPosts(
+        auth.user!.uid,
+        refresh: true,
+      );
+    }
   }
 
   Future<void> _loadMorePosts() async {
-    // Implement pagination here
+    final auth = ref.read(authProvider);
+    if (auth.user != null) {
+      await ref.read(postsProvider.notifier).loadFeedPosts(
+        auth.user!.uid,
+        refresh: false,
+      );
+    }
   }
 
   Future<void> _refreshFeed() async {
-    // Implement pull to refresh
     await _loadInitialData();
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final postsState = ref.watch(postsProvider);
+
+    // If not authenticated, show login prompt
+    if (!authState.isAuthenticated) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'يجب تسجيل الدخول أولاً',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontFamily: 'Cairo',
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: CustomAppBar(
         title: AppConstants.appName,
@@ -106,7 +139,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: LoadingOverlay(
-        isLoading: _isLoading,
+        isLoading: authState.isLoading,
         child: RefreshIndicator(
           onRefresh: _refreshFeed,
           color: AppColors.primary,
@@ -149,49 +182,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
               // Posts Feed
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: 16.h),
-                      child: PostWidget(
-                        post: PostModel(
-                          id: 'post_$index',
-                          userId: 'user_${index + 10}',
-                          username: 'user_${index + 10}',
-                          userProfileImage: 'https://picsum.photos/200?random=${index + 10}',
-                          media: [
-                            PostMedia(
-                              id: 'media_${index}_1',
-                              url: 'https://picsum.photos/400?random=${index + 20}',
-                              type: PostType.image,
+              if (postsState.posts.isEmpty && !postsState.isLoading)
+                SliverToBoxAdapter(
+                  child: Container(
+                    height: 300.h,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.photo_library_outlined,
+                            size: 64.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'لا توجد منشورات بعد',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              color: AppColors.textSecondary,
+                              fontFamily: 'Cairo',
                             ),
-                          ],
-                          caption: 'هذا منشور تجريبي رقم ${index + 1} مع وصف طويل ليظهر كيف سيبدو المنشور في التطبيق.',
-                          location: index % 3 == 0 ? PostLocation(
-                            id: 'location_$index',
-                            name: 'الرياض، السعودية',
-                            latitude: 24.7136,
-                            longitude: 46.6753,
-                          ) : null,
-                          likesCount: (index + 1) * 24,
-                          commentsCount: (index + 1) * 5,
-                          sharesCount: (index + 1) * 2,
-                          likedBy: index % 2 == 0 ? ['current_user_id'] : [],
-                          savedBy: index % 3 == 0 ? ['current_user_id'] : [],
-                          createdAt: DateTime.now().subtract(Duration(hours: index + 1)),
-                          visibility: PostVisibility.public,
-                        ),
-                        onProfileTap: () => _viewProfile(index),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            'تابع أشخاصاً لمشاهدة منشوراتهم',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: AppColors.textSecondary,
+                              fontFamily: 'Cairo',
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                  childCount: 20, // Placeholder count
+                    ),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                      final post = postsState.posts[index];
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 16.h),
+                        child: PostWidget(
+                          post: post,
+                          onProfileTap: () => _viewProfile(post.userId),
+                          onLike: () => _likePost(post),
+                          onComment: () => _commentOnPost(post),
+                          onShare: () => _sharePost(post),
+                          onSave: () => _savePost(post),
+                        ),
+                      );
+                    },
+                    childCount: postsState.posts.length,
+                  ),
                 ),
-              ),
 
               // Loading indicator at bottom
-              if (_isLoading)
+              if (postsState.isLoading && postsState.posts.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(16.w),
@@ -214,28 +263,89 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     print('View story $index');
   }
 
-  void _likePost(int index) {
-    // Handle like post
-    print('Like post $index');
+  Future<void> _likePost(PostModel post) async {
+    final auth = ref.read(authProvider);
+    final postsNotifier = ref.read(postsProvider.notifier);
+
+    if (auth.user == null) return;
+
+    try {
+      if (post.isLikedBy(auth.user!.uid)) {
+        await postsNotifier.unlikePost(post.id, auth.user!.uid);
+      } else {
+        await postsNotifier.likePost(post.id, auth.user!.uid);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطأ في التفاعل مع المنشور'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
-  void _commentOnPost(int index) {
-    // Navigate to comments
-    print('Comment on post $index');
+  void _commentOnPost(PostModel post) {
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => CommentsScreen(post: post),
+    //   ),
+    // );
   }
 
-  void _sharePost(int index) {
-    // Handle share post
-    print('Share post $index');
+  Future<void> _sharePost(PostModel post) async {
+    final auth = ref.read(authProvider);
+    final postsNotifier = ref.read(postsProvider.notifier);
+
+    if (auth.user == null) return;
+
+    try {
+      await postsNotifier.sharePost(post.id, auth.user!.uid);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم مشاركة المنشور'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('فشل في مشاركة المنشور'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
-  void _savePost(int index) {
-    // Handle save post
-    print('Save post $index');
+  Future<void> _savePost(PostModel post) async {
+    final auth = ref.read(authProvider);
+    final postsNotifier = ref.read(postsProvider.notifier);
+
+    if (auth.user == null) return;
+
+    try {
+      if (post.isSavedBy(auth.user!.uid)) {
+        await postsNotifier.unsavePost(post.id, auth.user!.uid);
+      } else {
+        await postsNotifier.savePost(post.id, auth.user!.uid);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطأ في حفظ المنشور'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
-  void _viewProfile(int index) {
-    // Navigate to profile
-    print('View profile $index');
+  void _viewProfile(String userId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProfileScreen(userId: userId),
+      ),
+    );
   }
 }

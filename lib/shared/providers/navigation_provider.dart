@@ -51,16 +51,20 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
     changeTab(1);
   }
 
-  void goToReels() {
+  void goToAddPost() {
     changeTab(2);
   }
 
-  void goToNotifications() {
+  void goToReels() {
     changeTab(3);
   }
 
-  void goToProfile() {
+  void goToNotifications() {
     changeTab(4);
+  }
+
+  void goToProfile() {
+    changeTab(5);
   }
 
   @override

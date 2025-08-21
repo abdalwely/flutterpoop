@@ -5,29 +5,114 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/providers/posts_provider.dart';
+import '../../../../shared/providers/reels_provider.dart';
+import '../../../../shared/services/firestore_service.dart';
+import '../../../../shared/models/user_model.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../auth/presentation/pages/login_screen.dart';
+import '../../../reels/presentation/pages/reels_screen.dart';
 
-class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends ConsumerStatefulWidget {
+  final String? userId; // If null, show current user's profile
+  
+  const ProfileScreen({super.key, this.userId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  UserModel? _profileUser;
+  bool _isLoading = true;
+  bool _isFollowing = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+  
+  Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final authState = ref.read(authProvider);
+      
+      if (widget.userId == null) {
+        // Show current user's profile
+        _profileUser = authState.user;
+      } else {
+        // Load specific user's profile
+        final firestoreService = FirestoreService();
+        _profileUser = await firestoreService.getUser(widget.userId!);
+        
+        // Check if current user is following this user
+        if (authState.user != null && _profileUser != null) {
+          _isFollowing = await firestoreService.isFollowing(
+            authState.user!.uid, 
+            _profileUser!.uid,
+          );
+        }
+      }
+      
+      // Load user's posts
+      if (_profileUser != null) {
+        await ref.read(userPostsProvider(_profileUser!.uid).notifier)
+            .loadUserPosts(_profileUser!.uid, refresh: true);
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+  
+  bool get _isOwnProfile {
+    final authState = ref.read(authProvider);
+    return widget.userId == null || widget.userId == authState.user?.uid;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final user = authState.user;
+    
+    if (_isLoading) {
+      return Scaffold(
+        appBar: CustomAppBar(
+          title: AppConstants.profile,
+          showBackButton: widget.userId != null,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+    
+    if (_profileUser == null) {
+      return Scaffold(
+        appBar: CustomAppBar(
+          title: AppConstants.profile,
+          showBackButton: widget.userId != null,
+        ),
+        body: const Center(
+          child: Text('لم يتم العثور على المستخدم'),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: user?.username ?? AppConstants.profile,
+        title: _profileUser?.username ?? AppConstants.profile,
         titleStyle: TextStyle(
           fontSize: 20.sp,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
           fontFamily: 'Cairo',
         ),
-        showBackButton: false,
-        actions: [
+        showBackButton: widget.userId != null,
+        actions: _isOwnProfile ? [
           IconButton(
             onPressed: () {
               // Navigate to settings
@@ -38,7 +123,7 @@ class ProfileScreen extends ConsumerWidget {
               color: AppColors.textPrimary,
             ),
           ),
-        ],
+        ] : null,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -52,10 +137,10 @@ class ProfileScreen extends ConsumerWidget {
                   CircleAvatar(
                     radius: 50.r,
                     backgroundColor: AppColors.inputBackground,
-                    backgroundImage: user?.hasProfileImage == true
-                        ? NetworkImage(user!.profileImageUrl)
+                    backgroundImage: _profileUser!.hasProfileImage
+                        ? NetworkImage(_profileUser!.profileImageUrl)
                         : null,
-                    child: user?.hasProfileImage != true
+                    child: !_profileUser!.hasProfileImage
                         ? Icon(
                       Icons.person,
                       size: 50.sp,
@@ -68,7 +153,9 @@ class ProfileScreen extends ConsumerWidget {
 
                   // Full Name
                   Text(
-                    user?.fullName ?? 'الاسم الكامل',
+                    _profileUser!.fullName.isNotEmpty 
+                      ? _profileUser!.fullName 
+                      : _profileUser!.username,
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.bold,
@@ -81,7 +168,7 @@ class ProfileScreen extends ConsumerWidget {
 
                   // Username
                   Text(
-                    '@${user?.username ?? 'username'}',
+                    '@${_profileUser!.username}',
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: AppColors.textSecondary,
@@ -89,10 +176,10 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
 
-                  if (user?.hasBio == true) ...[
+                  if (_profileUser!.hasBio) ...[
                     SizedBox(height: 12.h),
                     Text(
-                      user!.bio,
+                      _profileUser!.bio,
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: AppColors.textPrimary,
@@ -109,15 +196,15 @@ class ProfileScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildStatItem(
-                        user?.postsText ?? '0',
+                        _profileUser?.postsText ?? '0',
                         AppConstants.posts,
                       ),
                       _buildStatItem(
-                        user?.followerText ?? '0',
+                        _profileUser?.followerText ?? '0',
                         AppConstants.followers,
                       ),
                       _buildStatItem(
-                        user?.followingText ?? '0',
+                        _profileUser?.followingText ?? '0',
                         AppConstants.following,
                       ),
                     ],
@@ -125,14 +212,21 @@ class ProfileScreen extends ConsumerWidget {
 
                   SizedBox(height: 24.h),
 
-                  // Edit Profile Button
-                  CustomButton(
-                    text: AppConstants.editProfile,
-                    isOutlined: true,
-                    onPressed: () {
-                      // Navigate to edit profile
-                    },
-                  ),
+                  // Action Button (Edit Profile or Follow)
+                  if (_isOwnProfile)
+                    CustomButton(
+                      text: AppConstants.editProfile,
+                      isOutlined: true,
+                      onPressed: () {
+                        // Navigate to edit profile
+                      },
+                    )
+                  else
+                    CustomButton(
+                      text: _isFollowing ? AppConstants.unfollow : AppConstants.follow,
+                      isOutlined: _isFollowing,
+                      onPressed: _toggleFollow,
+                    ),
                 ],
               ),
             ),
@@ -175,15 +269,16 @@ class ProfileScreen extends ConsumerWidget {
 
             SizedBox(height: 24.h),
 
-            // Logout Button
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: CustomButton(
-                text: AppConstants.logout,
-                backgroundColor: AppColors.error,
-                onPressed: () => _showLogoutDialog(context, ref),
+            // Logout Button (only for own profile)
+            if (_isOwnProfile)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: CustomButton(
+                  text: AppConstants.logout,
+                  backgroundColor: AppColors.error,
+                  onPressed: () => _showLogoutDialog(context, ref),
+                ),
               ),
-            ),
 
             SizedBox(height: 24.h),
           ],
@@ -218,6 +313,40 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildPostsGrid() {
+    if (_profileUser == null) return const SizedBox.shrink();
+    
+    final postsState = ref.watch(userPostsProvider(_profileUser!.uid));
+    
+    if (postsState.isLoading && postsState.posts.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
+    
+    if (postsState.posts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.camera_alt_outlined,
+              size: 64.sp,
+              color: AppColors.textSecondary,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'لا توجد منشورات',
+              style: TextStyle(
+                fontSize: 18.sp,
+                color: AppColors.textSecondary,
+                fontFamily: 'Cairo',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
     return GridView.builder(
       padding: EdgeInsets.zero,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -226,17 +355,32 @@ class ProfileScreen extends ConsumerWidget {
         mainAxisSpacing: 2.w,
         childAspectRatio: 1,
       ),
-      itemCount: 12,
+      itemCount: postsState.posts.length,
       itemBuilder: (context, index) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.shimmerBase,
-            image: DecorationImage(
-              image: NetworkImage(
-                'https://picsum.photos/300?random=${index + 400}',
+        final post = postsState.posts[index];
+        return GestureDetector(
+          onTap: () {
+            // Navigate to post detail
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.shimmerBase,
+              image: DecorationImage(
+                image: NetworkImage(post.imageUrl),
+                fit: BoxFit.cover,
               ),
-              fit: BoxFit.cover,
             ),
+            child: post.media.length > 1
+              ? Positioned(
+                  top: 8.h,
+                  right: 8.w,
+                  child: Icon(
+                    Icons.collections,
+                    color: AppColors.white,
+                    size: 16.sp,
+                  ),
+                )
+              : null,
           ),
         );
       },
@@ -244,42 +388,207 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildReelsGrid() {
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2.w,
-        mainAxisSpacing: 2.w,
-        childAspectRatio: 0.75,
-      ),
-      itemCount: 8,
-      itemBuilder: (context, index) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.shimmerBase,
-            image: DecorationImage(
-              image: NetworkImage(
-                'https://picsum.photos/300/400?random=${index + 500}',
-              ),
-              fit: BoxFit.cover,
+    if (_profileUser == null) return const SizedBox.shrink();
+
+    final userReelsAsync = ref.watch(userReelsProvider(_profileUser!.uid));
+
+    return userReelsAsync.when(
+      data: (reels) {
+        if (reels.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.video_library_outlined,
+                  size: 64.sp,
+                  color: AppColors.textSecondary,
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  'لا توجد ريلز',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    color: AppColors.textSecondary,
+                    fontFamily: 'Cairo',
+                  ),
+                ),
+              ],
             ),
+          );
+        }
+
+        return GridView.builder(
+          padding: EdgeInsets.zero,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 2.w,
+            mainAxisSpacing: 2.w,
+            childAspectRatio: 0.75,
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                bottom: 8.h,
-                left: 8.w,
-                child: Icon(
-                  Icons.play_arrow,
-                  color: AppColors.white,
-                  size: 20.sp,
+          itemCount: reels.length,
+          itemBuilder: (context, index) {
+            final reel = reels[index];
+            return GestureDetector(
+              onTap: () {
+                // Navigate to reels screen with this specific reel
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ReelsScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.shimmerBase,
+                  image: DecorationImage(
+                    image: NetworkImage(reel.thumbnailUrl),
+                    fit: BoxFit.cover,
+                    onError: (error, stackTrace) {
+                      // Handle error loading thumbnail
+                    },
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Play button overlay
+                    Positioned(
+                      bottom: 8.h,
+                      left: 8.w,
+                      child: Container(
+                        padding: EdgeInsets.all(4.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.black.withOpacity(0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.play_arrow,
+                          color: AppColors.white,
+                          size: 16.sp,
+                        ),
+                      ),
+                    ),
+
+                    // Views count
+                    Positioned(
+                      bottom: 8.h,
+                      right: 8.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                        child: Text(
+                          reel.viewsCount > 999
+                              ? '${(reel.viewsCount / 1000).toStringAsFixed(1)}ك'
+                              : reel.viewsCount.toString(),
+                          style: TextStyle(
+                            color: AppColors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Duration
+                    Positioned(
+                      top: 8.h,
+                      right: 8.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                        child: Text(
+                          reel.durationText,
+                          style: TextStyle(
+                            color: AppColors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
+      error: (error, stackTrace) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48.sp,
+              color: AppColors.error,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'فشل في تحميل الريلز',
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: AppColors.error,
+                fontFamily: 'Cairo',
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+  
+  Future<void> _toggleFollow() async {
+    final auth = ref.read(authProvider);
+    if (auth.user == null || _profileUser == null) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      final firestoreService = FirestoreService();
+      
+      if (_isFollowing) {
+        await firestoreService.unfollowUser(auth.user!.uid, _profileUser!.uid);
+        setState(() => _isFollowing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم إلغاء متابعة ${_profileUser!.username}'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      } else {
+        await firestoreService.followUser(auth.user!.uid, _profileUser!.uid);
+        setState(() => _isFollowing = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تمت متابعة ${_profileUser!.username}'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+      
+      // Reload user data to update follower count
+      await _loadUserData();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطأ في تحديث حالة المتابعة'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {

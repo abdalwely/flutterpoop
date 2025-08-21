@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../models/post_model.dart';
+import '../providers/auth_provider.dart';
+import '../../features/post/presentation/pages/comments_screen.dart';
 
 class PostWidget extends ConsumerStatefulWidget {
   final PostModel post;
@@ -61,16 +63,22 @@ class _PostWidgetState extends ConsumerState<PostWidget>
   }
 
   void _onDoubleTap() {
-    // TODO: Implement like functionality
-    setState(() => _showLikeAnimation = true);
-    _likeAnimationController.forward().then((_) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          setState(() => _showLikeAnimation = false);
-          _likeAnimationController.reset();
-        }
-      });
-    });
+    final auth = ref.read(authProvider);
+    if (auth.user != null) {
+      final isLiked = widget.post.isLikedBy(auth.user!.uid);
+      if (!isLiked) {
+        widget.onLike?.call();
+        setState(() => _showLikeAnimation = true);
+        _likeAnimationController.forward().then((_) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              setState(() => _showLikeAnimation = false);
+              _likeAnimationController.reset();
+            }
+          });
+        });
+      }
+    }
   }
 
   @override
@@ -82,22 +90,22 @@ class _PostWidgetState extends ConsumerState<PostWidget>
         children: [
           // Post Header
           _buildPostHeader(),
-          
+
           // Post Image
           _buildPostImage(),
-          
+
           // Post Actions
           _buildPostActions(),
-          
+
           // Post Info
           _buildPostInfo(),
-          
+
           // Post Caption
           if (widget.post.caption.isNotEmpty) _buildPostCaption(),
-          
+
           // View Comments
           _buildViewComments(),
-          
+
           SizedBox(height: 8.h),
         ],
       ),
@@ -124,9 +132,9 @@ class _PostWidgetState extends ConsumerState<PostWidget>
               ),
             ),
           ),
-          
+
           SizedBox(width: 12.w),
-          
+
           // User Info
           Expanded(
             child: GestureDetector(
@@ -158,7 +166,7 @@ class _PostWidgetState extends ConsumerState<PostWidget>
               ),
             ),
           ),
-          
+
           // Time
           Text(
             widget.post.timeAgo,
@@ -168,9 +176,9 @@ class _PostWidgetState extends ConsumerState<PostWidget>
               fontFamily: 'Cairo',
             ),
           ),
-          
+
           SizedBox(width: 8.w),
-          
+
           // More Button
           IconButton(
             onPressed: widget.onMoreTap,
@@ -217,7 +225,7 @@ class _PostWidgetState extends ConsumerState<PostWidget>
               ),
             ),
           ),
-          
+
           // Like Animation
           if (_showLikeAnimation)
             Positioned.fill(
@@ -255,29 +263,38 @@ class _PostWidgetState extends ConsumerState<PostWidget>
             onTap: widget.onLike,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              child: Icon(
-                widget.post.isLiked ? Icons.favorite : Icons.favorite_border,
-                color: widget.post.isLiked ? AppColors.like : AppColors.textPrimary,
-                size: 24.sp,
-                key: ValueKey(widget.post.isLiked),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final auth = ref.watch(authProvider);
+                  final isLiked = auth.user != null
+                      ? widget.post.isLikedBy(auth.user!.uid)
+                      : false;
+
+                  return Icon(
+                    isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? AppColors.like : AppColors.textPrimary,
+                    size: 24.sp,
+                    key: ValueKey(isLiked),
+                  );
+                },
               ),
             ),
           ),
-          
+
           SizedBox(width: 16.w),
-          
+
           // Comment Button
           GestureDetector(
-            onTap: widget.onComment,
+            onTap: widget.onComment ?? () => _navigateToComments(context),
             child: Icon(
               Icons.mode_comment_outlined,
               color: AppColors.textPrimary,
               size: 24.sp,
             ),
           ),
-          
+
           SizedBox(width: 16.w),
-          
+
           // Share Button
           GestureDetector(
             onTap: widget.onShare,
@@ -287,16 +304,25 @@ class _PostWidgetState extends ConsumerState<PostWidget>
               size: 24.sp,
             ),
           ),
-          
+
           const Spacer(),
-          
+
           // Save Button
           GestureDetector(
             onTap: widget.onSave,
-            child: Icon(
-              widget.post.isSaved ? Icons.bookmark : Icons.bookmark_border,
-              color: AppColors.textPrimary,
-              size: 24.sp,
+            child: Consumer(
+              builder: (context, ref, child) {
+                final auth = ref.watch(authProvider);
+                final isSaved = auth.user != null
+                    ? widget.post.isSavedBy(auth.user!.uid)
+                    : false;
+
+                return Icon(
+                  isSaved ? Icons.bookmark : Icons.bookmark_border,
+                  color: AppColors.textPrimary,
+                  size: 24.sp,
+                );
+              },
             ),
           ),
         ],
@@ -357,11 +383,11 @@ class _PostWidgetState extends ConsumerState<PostWidget>
 
   Widget _buildViewComments() {
     if (widget.post.commentsCount == 0) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       child: GestureDetector(
-        onTap: widget.onComment,
+        onTap: widget.onComment ?? () => _navigateToComments(context),
         child: Text(
           'عرض جميع التعليقات (${widget.post.commentsCount})',
           style: TextStyle(
@@ -372,6 +398,15 @@ class _PostWidgetState extends ConsumerState<PostWidget>
         ),
       ),
     );
+  }
+
+  void _navigateToComments(BuildContext context) {
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => CommentsScreen.fromPost(post: widget.post),
+    //   ),
+    // );
   }
 
   String _formatLikesCount(int count) {

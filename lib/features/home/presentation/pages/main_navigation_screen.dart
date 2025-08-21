@@ -4,11 +4,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/providers/navigation_provider.dart';
+import '../../../../shared/providers/auth_provider.dart';
 import 'home_screen.dart';
 import '../../../explore/presentation/pages/explore_screen.dart';
 import '../../../reels/presentation/pages/reels_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../post/presentation/pages/add_post_screen.dart';
+import '../../../notifications/presentation/pages/notifications_screen.dart';
 
 class MainNavigationScreen extends ConsumerWidget {
   const MainNavigationScreen({super.key});
@@ -16,13 +18,15 @@ class MainNavigationScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(currentTabProvider);
+    final authState = ref.watch(authProvider);
 
     final List<Widget> pages = [
       const HomeScreen(),
       const ExploreScreen(),
       const AddPostScreen(),
       const ReelsScreen(),
-      const ProfileScreen(),
+      const NotificationsScreen(),
+      ProfileScreen(userId: authState.user?.uid),
     ];
 
     return Scaffold(
@@ -65,33 +69,38 @@ class _CustomBottomNavigationBar extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 8.h),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _NavBarItem(
-                icon: Icons.home,
+                icon: selectedIndex == 0 ? Icons.home : Icons.home_outlined,
                 isSelected: selectedIndex == 0,
                 onTap: () => onTap(0),
               ),
               _NavBarItem(
-                icon: Icons.search,
+                icon: selectedIndex == 1 ? Icons.search : Icons.search_outlined,
                 isSelected: selectedIndex == 1,
                 onTap: () => onTap(1),
               ),
               _NavBarItem(
-                icon: Icons.add_box_outlined,
+                icon: selectedIndex == 2 ? Icons.add_box : Icons.add_box_outlined,
                 isSelected: selectedIndex == 2,
                 onTap: () => onTap(2),
                 isSpecial: true,
               ),
               _NavBarItem(
-                icon: Icons.video_library_outlined,
+                icon: selectedIndex == 3 ? Icons.video_library : Icons.video_library_outlined,
                 isSelected: selectedIndex == 3,
                 onTap: () => onTap(3),
               ),
               _NavBarItem(
-                icon: Icons.person_outline,
+                icon: selectedIndex == 4 ? Icons.favorite : Icons.favorite_border,
                 isSelected: selectedIndex == 4,
                 onTap: () => onTap(4),
+              ),
+              _NavBarItem(
+                icon: selectedIndex == 5 ? Icons.person : Icons.person_outline,
+                isSelected: selectedIndex == 5,
+                onTap: () => onTap(5),
               ),
             ],
           ),

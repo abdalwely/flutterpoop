@@ -6,8 +6,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:photo_view/photo_view.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
+import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/providers/posts_provider.dart';
+import '../../../../shared/services/post_service.dart';
+import '../../../../shared/models/post_model.dart';
 import '../widgets/image_filter_widget.dart';
 import '../widgets/location_picker_widget.dart';
 
@@ -121,7 +126,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
         Navigator.pop(context);
       }
     } catch (e) {
-      _showErrorSnackBar('فشل في اختيار الصور');
+      _showErrorSnackBar('فشل في ا��تيار الصور');
       Navigator.pop(context);
     } finally {
       setState(() => _isLoading = false);
@@ -955,21 +960,88 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
   }
 
   Future<void> _publishPost() async {
+    final auth = ref.read(authProvider);
+    final postsNotifier = ref.read(postsProvider.notifier);
+
+    if (auth.user == null) {
+      _showErrorSnackBar('يجب تسجيل الدخول أولاً');
+      return;
+    }
+
+    if (_selectedMedia.isEmpty) {
+      _showErrorSnackBar('يجب اختيار صورة على الأقل');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Implement post publishing logic
-      // This would involve uploading media to Firebase Storage
-      // and creating a post document in Firestore
+      // Extract hashtags from caption
+      final List<String> hashtags = _extractHashtags(_captionController.text);
 
-      await Future.delayed(const Duration(seconds: 2)); // Simulate upload
+      // Extract mentions from caption
+      final List<String> mentions = _extractMentions(_captionController.text);
 
+      // Create location if selected
+      PostLocation? location;
+      if (_selectedLocation.isNotEmpty) {
+        location = PostLocation(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          name: _selectedLocation,
+        );
+      }
+
+      // Set visibility
+      PostVisibility visibility;
+      switch (_audience) {
+        case 'followers':
+          visibility = PostVisibility.followers;
+          break;
+        case 'close_friends':
+          visibility = PostVisibility.close_friends;
+          break;
+        default:
+          visibility = PostVisibility.public;
+      }
+
+      final postService = PostService();
+      final postId = await postService.createPost(
+        userId: auth.user!.uid,
+        caption: _captionController.text,
+        mediaFiles: _selectedMedia,
+        location: location,
+        hashtags: hashtags,
+        mentions: mentions,
+        visibility: visibility,
+        allowComments: _allowComments,
+        allowSharing: true,
+        hideLikesCount: !_showLikesCount,
+      );
+
+      // Refresh posts feed
+      await postsNotifier.loadFeedPosts(auth.user!.uid, refresh: true);
+
+      _showSuccessSnackBar('تم نشر المنشور بنجاح');
       Navigator.pop(context, true);
     } catch (e) {
-      _showErrorSnackBar('فشل في نشر المنشور');
+      _showErrorSnackBar('فشل في نشر المنشور: ${e.toString()}');
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  List<String> _extractHashtags(String text) {
+    final RegExp hashtagRegex = RegExp(r'#[\u0600-\u06FF\w]+');
+    return hashtagRegex.allMatches(text)
+        .map((match) => match.group(0)!.substring(1))
+        .toList();
+  }
+
+  List<String> _extractMentions(String text) {
+    final RegExp mentionRegex = RegExp(r'@[\u0600-\u06FF\w]+');
+    return mentionRegex.allMatches(text)
+        .map((match) => match.group(0)!.substring(1))
+        .toList();
   }
 
   void _showErrorSnackBar(String message) {
@@ -980,6 +1052,18 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
           style: TextStyle(fontFamily: 'Cairo'),
         ),
         backgroundColor: AppColors.error,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(fontFamily: 'Cairo'),
+        ),
+        backgroundColor: AppColors.success,
       ),
     );
   }

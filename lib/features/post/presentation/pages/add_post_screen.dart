@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import 'create_post_screen.dart';
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -14,6 +17,81 @@ class AddPostScreen extends StatefulWidget {
 }
 
 class _AddPostScreenState extends State<AddPostScreen> {
+  final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false;
+
+  Future<void> _pickFromGallery() async {
+    try {
+      setState(() => _isLoading = true);
+
+      final List<XFile> images = await _picker.pickMultiImage();
+      if (images.isNotEmpty) {
+        final List<File> files = images.map((image) => File(image.path)).toList();
+        _navigateToCreatePost(files);
+      }
+    } catch (e) {
+      _showErrorSnackBar('فشل في اختيار الصور');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      setState(() => _isLoading = true);
+
+      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+      if (photo != null) {
+        _navigateToCreatePost([File(photo.path)]);
+      }
+    } catch (e) {
+      _showErrorSnackBar('فشل في التقاط الصورة');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _recordVideo() async {
+    try {
+      setState(() => _isLoading = true);
+
+      final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+      if (video != null) {
+        _navigateToCreatePost([File(video.path)]);
+      }
+    } catch (e) {
+      _showErrorSnackBar('فشل في تسجيل الفيديو');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _navigateToCreatePost(List<File> files) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreatePostScreen(initialMedia: files),
+      ),
+    ).then((result) {
+      if (result == true) {
+        // Post was created successfully, navigate back to home
+        Navigator.pop(context);
+      }
+    });
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(fontFamily: 'Cairo'),
+        ),
+        backgroundColor: AppColors.error,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,31 +158,25 @@ class _AddPostScreenState extends State<AddPostScreen> {
               CustomButton(
                 text: 'اختيار من المعرض',
                 icon: Icons.photo_library_outlined,
-                onPressed: () {
-                  // Implement gallery picker
-                },
+                onPressed: _pickFromGallery,
               ),
-              
+
               SizedBox(height: 16.h),
-              
+
               CustomButton(
                 text: 'التقاط صورة',
                 icon: Icons.camera_alt_outlined,
                 isOutlined: true,
-                onPressed: () {
-                  // Implement camera
-                },
+                onPressed: _takePhoto,
               ),
-              
+
               SizedBox(height: 16.h),
-              
+
               CustomButton(
                 text: 'تسجيل فيديو',
                 icon: Icons.videocam_outlined,
                 isOutlined: true,
-                onPressed: () {
-                  // Implement video recording
-                },
+                onPressed: _recordVideo,
               ),
             ],
           ),

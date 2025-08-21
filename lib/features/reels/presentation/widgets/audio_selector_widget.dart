@@ -190,81 +190,83 @@ class _AudioSelectorWidgetState extends State<AudioSelectorWidget>
   Widget _buildOriginalSoundsTab() {
     return Padding(
       padding: EdgeInsets.all(16.w),
-      child: Column(
-        children: [
-          // Record original sound
-          GestureDetector(
-            onTap: _recordOriginalSound,
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.primary),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40.w,
-                    height: 40.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Record original sound
+            GestureDetector(
+              onTap: _recordOriginalSound,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppColors.primary),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40.w,
+                      height: 40.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.mic,
+                        color: AppColors.white,
+                        size: 20.sp,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.mic,
-                      color: AppColors.white,
-                      size: 20.sp,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'تسجيل صوت أصلي',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                            fontFamily: 'Cairo',
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'تسجيل صوت أصلي',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                              fontFamily: 'Cairo',
+                            ),
                           ),
-                        ),
-                        Text(
-                          'سجل صوتك الخاص للريل',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
-                            fontFamily: 'Cairo',
+                          Text(
+                            'سجل صوتك الخاص للريل',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: AppColors.textSecondary,
+                              fontFamily: 'Cairo',
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          SizedBox(height: 16.h),
-          
-          // No original sound option
-          AudioTrackItem(
-            track: AudioTrack(
-              id: 'original',
-              title: 'بدون موسيقى',
-              artist: 'الصوت الأصلي',
-              duration: 0,
-              isOriginal: true,
+            
+            SizedBox(height: 16.h),
+            
+            // No original sound option
+            AudioTrackItem(
+              track: AudioTrack(
+                id: 'original',
+                title: 'بدون موسيقى',
+                artist: 'الصوت الأصلي',
+                duration: 0,
+                isOriginal: true,
+              ),
+              isSelected: _selectedAudio == 'original',
+              onTap: () {
+                setState(() => _selectedAudio = 'original');
+              },
             ),
-            isSelected: _selectedAudio == 'original',
-            onTap: () {
-              setState(() => _selectedAudio = 'original');
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
